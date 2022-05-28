@@ -31,8 +31,6 @@
 #include <QtPlugin>
 
 namespace Qtmotion {
-namespace Internal {
-
 constexpr bool verbose = true;
 
 inline void log(const std::string& str) {
@@ -468,7 +466,6 @@ ExtensionSystem::IPlugin::ShutdownFlag QtmotionPlugin::aboutToShutdown() {
   return SynchronousShutdown;
 }
 
-} // namespace Internal
 } // namespace Qtmotion
 
 #include "Qtmotion.moc"

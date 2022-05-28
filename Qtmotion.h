@@ -5,7 +5,6 @@
 #include <extensionsystem/iplugin.h>
 
 namespace Qtmotion {
-namespace Internal {
 class QtmotionHandler;
 
 class QtmotionPlugin : public ExtensionSystem::IPlugin {
@@ -23,6 +22,4 @@ class QtmotionPlugin : public ExtensionSystem::IPlugin {
  private:
   std::unique_ptr<QtmotionHandler> handler_;
 };
-
-} // namespace Internal
 } // namespace Qtmotion
