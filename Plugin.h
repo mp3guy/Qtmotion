@@ -5,21 +5,21 @@
 #include <extensionsystem/iplugin.h>
 
 namespace Qtmotion {
-class QtmotionHandler;
+class EventHandler;
 
-class QtmotionPlugin : public ExtensionSystem::IPlugin {
+class Plugin : public ExtensionSystem::IPlugin {
   Q_OBJECT
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QtCreatorPlugin" FILE "Qtmotion.json")
 
  public:
-  QtmotionPlugin();
-  ~QtmotionPlugin() override;
+  Plugin();
+  ~Plugin() override;
 
   bool initialize(const QStringList& arguments, QString* errorString) override;
   void extensionsInitialized() override;
   ShutdownFlag aboutToShutdown() override;
 
  private:
-  std::unique_ptr<QtmotionHandler> handler_;
+  std::unique_ptr<EventHandler> handler_;
 };
 } // namespace Qtmotion

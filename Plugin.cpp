@@ -1,4 +1,4 @@
-#include "Qtmotion.h"
+#include "Plugin.h"
 
 #include <iostream>
 
@@ -205,13 +205,13 @@ class QtmotionTarget : public QObject {
   QVector<int> targetPositions_;
 };
 
-class QtmotionHandler : public QObject {
+class EventHandler : public QObject {
   Q_OBJECT
 
  public:
-  QtmotionHandler(QObject* parent = nullptr) : QObject(parent) {}
+  EventHandler(QObject* parent = nullptr) : QObject(parent) {}
 
-  ~QtmotionHandler() {}
+  ~EventHandler() {}
 
  public slots:
   void easyMotionForEntireScreenTriggered(void) {
@@ -435,11 +435,11 @@ class QtmotionHandler : public QObject {
   QtmotionTarget target_;
 };
 
-QtmotionPlugin::QtmotionPlugin() : handler_(std::make_unique<QtmotionHandler>()) {}
+Plugin::Plugin() : handler_(std::make_unique<EventHandler>()) {}
 
-QtmotionPlugin::~QtmotionPlugin() {}
+Plugin::~Plugin() {}
 
-bool QtmotionPlugin::initialize(const QStringList&, QString*) {
+bool Plugin::initialize(const QStringList&, QString*) {
   QAction* easyMotionSearchEntireScreen = new QAction(tr("Search entire screen"), this);
 
   constexpr std::string_view kSearchScreenId = "Qtmotion.SearchScreen";
@@ -460,12 +460,12 @@ bool QtmotionPlugin::initialize(const QStringList&, QString*) {
   return true;
 }
 
-void QtmotionPlugin::extensionsInitialized() {}
+void Plugin::extensionsInitialized() {}
 
-ExtensionSystem::IPlugin::ShutdownFlag QtmotionPlugin::aboutToShutdown() {
+ExtensionSystem::IPlugin::ShutdownFlag Plugin::aboutToShutdown() {
   return SynchronousShutdown;
 }
 
 } // namespace Qtmotion
 
-#include "Qtmotion.moc"
+#include "Plugin.moc"
