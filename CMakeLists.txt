@@ -19,4 +19,8 @@ add_qtc_plugin(Qtmotion
   SOURCES
     Plugin.cpp
     Plugin.h
+    TargetString.cpp
+    TargetString.h
+    EventHandler.cpp
+    EventHandler.h
 )
