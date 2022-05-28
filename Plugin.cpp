@@ -69,10 +69,10 @@ void moveToPosition(QPlainTextEdit* editor, int newPos, bool visualMode) {
   }
 }
 
-class QtmotionTarget : public QObject {
+class TargetString : public QObject {
   Q_OBJECT
  public:
-  QtmotionTarget(void) {
+  TargetString(void) {
     targetPositions_.clear();
   }
 
@@ -214,8 +214,8 @@ class EventHandler : public QObject {
   ~EventHandler() {}
 
  public slots:
-  void easyMotionForEntireScreenTriggered(void) {
-    initQtmotion();
+  void triggerKeyPressed(void) {
+    init();
   }
 
  private slots:
@@ -232,13 +232,13 @@ class EventHandler : public QObject {
     QMetaObject::invokeMethod(this, "doInstallEventFilter", Qt::QueuedConnection);
   }
 
-  void initQtmotion() {
-    resetQtmotion();
+  void init() {
+    reset();
 
     currentEditor_ = Core::EditorManager::currentEditor();
 
     if (setEditor(currentEditor_)) {
-      state_ = QtmotionState::BeforeFirstCharacter;
+      state_ = State::BeforeFirstCharacter;
       installEventFilter();
       log("Initiated");
     } else {
@@ -246,7 +246,7 @@ class EventHandler : public QObject {
     }
   }
 
-  void resetQtmotion(void) {
+  void reset(void) {
     if (setEditor(currentEditor_)) {
       QWidget* viewport = textEdit_->viewport();
       textEdit_->removeEventFilter(this);
@@ -254,7 +254,7 @@ class EventHandler : public QObject {
       textEdit_ = nullptr;
     }
     target_.clear();
-    state_ = QtmotionState::Inactive;
+    state_ = State::Inactive;
     currentEditor_ = nullptr;
   }
 
@@ -266,8 +266,7 @@ class EventHandler : public QObject {
     QWidget* currentViewport = qobject_cast<QWidget*>(obj);
 
     if (currentViewport != nullptr && event->type() == QEvent::Paint) {
-      // Handle the painter event last to prevent
-      // the area painted by Qtmotion to be overidden
+      // Handle the painter event last to prevent the area painted from being overwritten
       currentViewport->removeEventFilter(this);
       QCoreApplication::sendEvent(currentViewport, event);
       currentViewport->installEventFilter(this);
@@ -298,15 +297,15 @@ class EventHandler : public QObject {
       // Exit the process
       log("Cancelling");
 
-      QtmotionState tmpState = state_;
-      if (tmpState == QtmotionState::WaitingForSelectionOrMoreCharacters) {
+      State tmpState = state_;
+      if (tmpState == State::WaitingForSelectionOrMoreCharacters) {
         textEdit_->viewport()->update();
       }
 
-      resetQtmotion();
+      reset();
 
       return true;
-    } else if (state_ == QtmotionState::BeforeFirstCharacter && !isModifierKey(e->key())) {
+    } else if (state_ == State::BeforeFirstCharacter && !isModifierKey(e->key())) {
       log("Just triggered with " + e->text().toStdString());
 
       QChar target(e->key());
@@ -323,22 +322,21 @@ class EventHandler : public QObject {
       }
 
       if (!target_.isEmpty()) {
-        state_ = QtmotionState::WaitingForSelectionOrMoreCharacters;
+        state_ = State::WaitingForSelectionOrMoreCharacters;
         textEdit_->viewport()->update();
       }
 
       return true;
-    } else if (
-        state_ == QtmotionState::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
+    } else if (state_ == State::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
       if (e->key() == Qt::Key_Return) {
         log("Cycling group");
 
         if (e->modifiers() == Qt::ShiftModifier) {
-          // Shift + Enter makes Qtmotion show previous
+          // Shift + Enter makes show previous
           // group of target positions
           target_.previousGroup();
         } else {
-          // Enter makes Qtmotion show next
+          // Enter makes show next
           // group of target positions
           target_.nextGroup();
         }
@@ -357,7 +355,7 @@ class EventHandler : public QObject {
         if (newPos >= 0) {
           QPlainTextEdit* plainEdit = textEdit_;
           QWidget* viewport = textEdit_->viewport();
-          resetQtmotion();
+          reset();
 
           if (plainEdit) {
             log("Moving to position " + std::to_string(newPos));
@@ -373,7 +371,7 @@ class EventHandler : public QObject {
   }
 
   bool handlePaintEvent(QPaintEvent*) {
-    if (state_ == QtmotionState::WaitingForSelectionOrMoreCharacters && !target_.isEmpty()) {
+    if (state_ == State::WaitingForSelectionOrMoreCharacters && !target_.isEmpty()) {
       QTextCursor tc = textEdit_->textCursor();
       QFontMetrics fm(textEdit_->font());
       QPainter painter(textEdit_->viewport());
@@ -427,12 +425,12 @@ class EventHandler : public QObject {
     return textEdit_ != nullptr;
   }
 
-  enum class QtmotionState { Inactive, BeforeFirstCharacter, WaitingForSelectionOrMoreCharacters };
+  enum class State { Inactive, BeforeFirstCharacter, WaitingForSelectionOrMoreCharacters };
 
   Core::IEditor* currentEditor_ = nullptr;
   QPlainTextEdit* textEdit_ = nullptr;
-  QtmotionState state_ = QtmotionState::Inactive;
-  QtmotionTarget target_;
+  State state_ = State::Inactive;
+  TargetString target_;
 };
 
 Plugin::Plugin() : handler_(std::make_unique<EventHandler>()) {}
@@ -440,22 +438,18 @@ Plugin::Plugin() : handler_(std::make_unique<EventHandler>()) {}
 Plugin::~Plugin() {}
 
 bool Plugin::initialize(const QStringList&, QString*) {
-  QAction* easyMotionSearchEntireScreen = new QAction(tr("Search entire screen"), this);
+  QAction* searchEntireScreen = new QAction(tr("Search entire screen"), this);
 
   constexpr std::string_view kSearchScreenId = "Qtmotion.SearchScreen";
 
   Core::Command* searchScreenCmd = Core::ActionManager::registerAction(
-      easyMotionSearchEntireScreen,
+      searchEntireScreen,
       std::string(kSearchScreenId).c_str(),
       Core::Context(Core::Constants::C_EDIT_MODE));
 
   searchScreenCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+;")));
 
-  connect(
-      easyMotionSearchEntireScreen,
-      SIGNAL(triggered()),
-      handler_.get(),
-      SLOT(easyMotionForEntireScreenTriggered()));
+  connect(searchEntireScreen, SIGNAL(triggered()), handler_.get(), SLOT(triggerKeyPressed()));
 
   return true;
 }
