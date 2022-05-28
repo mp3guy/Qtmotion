@@ -1,0 +1,11 @@
+{
+    \"Name\" : \"Qtmotion\",
+    \"Version\" : \"0.0.1\",
+    \"CompatVersion\" : \"0.0.1\",
+    \"Vendor\" : \"Thomas Whelan\",
+    \"Copyright\" : \"(C) Thomas Whelan\",
+    \"License\" : \"MIT\",
+    \"Description\" : \"Easymotion/leap.nvim/Jumpy/MetaJump-like plugin for QtCreator\",
+    \"Url\" : \"https://github.com/mp3guy/qtmotion\",
+    $$dependencyList
+}
