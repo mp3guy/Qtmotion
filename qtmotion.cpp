@@ -16,7 +16,6 @@
 #include <QAction>
 #include <QApplication>
 #include <QChar>
-#include <QDebug>
 #include <QLabel>
 #include <QListWidget>
 #include <QMainWindow>
@@ -41,41 +40,6 @@ inline void log(const std::string& str) {
   if constexpr (verbose) {
     std::cout << "Qtmotion: " << str << std::endl;
   }
-}
-
-QPair<int, int> getFirstAndLastVisiblePosition(QPlainTextEdit* editor) {
-  QTextCursor cursor = editor->textCursor();
-  QTextDocument* doc = editor->document();
-
-  int currentLine = doc->findBlock(cursor.position()).blockNumber();
-  int cursorHeight = editor->cursorRect().height();
-  int lineCountToFirstVisibleLine = editor->cursorRect().top() / cursorHeight;
-  int firstVisibleLineNum = currentLine - lineCountToFirstVisibleLine;
-
-  if (firstVisibleLineNum < 0) {
-    firstVisibleLineNum = 0;
-  }
-
-  int maxLineNumOnScreen = (editor->viewport()->height() / cursorHeight);
-
-  if (maxLineNumOnScreen < 1) {
-    maxLineNumOnScreen = 1;
-  }
-
-  int firstPos = doc->findBlockByNumber(firstVisibleLineNum).position();
-  int lastVisibleLineNum = firstVisibleLineNum + maxLineNumOnScreen - 1;
-  QTextBlock lastVisibleTextBlock = doc->findBlockByNumber(lastVisibleLineNum);
-
-  if (!lastVisibleTextBlock.isValid()) {
-    lastVisibleTextBlock = doc->lastBlock();
-  }
-
-  int lastPos = lastVisibleTextBlock.position() + lastVisibleTextBlock.length() - 1;
-
-  log("Visible lines " + std::to_string(firstVisibleLineNum + 1) + "->" +
-      std::to_string(lastVisibleLineNum + 1));
-
-  return QPair<int, int>(firstPos, lastPos);
 }
 
 void moveToPosition(QPlainTextEdit* editor, int newPos, bool visualMode) {
@@ -126,15 +90,15 @@ class QtmotionTarget : public QObject {
     QTextDocument* doc = editor->document();
     int cursorPos = editor->textCursor().position();
 
-    QPair<int, int> visibleRange = getFirstAndLastVisiblePosition(editor);
-    int firstPos = visibleRange.first;
-    int lastPos = visibleRange.second;
+    const QPoint bottomRight(editor->viewport()->width() - 1, editor->viewport()->height() - 1);
+    const int startPos = editor->cursorForPosition(QPoint(0, 0)).position();
+    const int endPos = editor->cursorForPosition(bottomRight).position();
+
     bool notCaseSensitive = target.category() != QChar::Letter_Uppercase;
 
     // Go up and down from the current position matching the target query
-    for (int offset = 1; cursorPos - offset >= firstPos || cursorPos + offset <= lastPos;
-         offset++) {
-      if (cursorPos + offset <= lastPos) {
+    for (int offset = 1; cursorPos - offset >= startPos || cursorPos + offset <= endPos; offset++) {
+      if (cursorPos + offset <= endPos) {
         QChar c = doc->characterAt(cursorPos + offset);
 
         if (notCaseSensitive) {
@@ -146,7 +110,7 @@ class QtmotionTarget : public QObject {
         }
       }
 
-      if (cursorPos - offset >= firstPos) {
+      if (cursorPos - offset >= startPos) {
         QChar c = doc->characterAt(cursorPos - offset);
 
         if (notCaseSensitive) {
@@ -277,7 +241,7 @@ class QtmotionHandler : public QObject {
     currentEditor_ = Core::EditorManager::currentEditor();
 
     if (setEditor(currentEditor_)) {
-      state_ = QtmotionState::QtmotionTriggered;
+      state_ = QtmotionState::BeforeFirstCharacter;
       installEventFilter();
       log("Initiated");
     } else {
@@ -293,7 +257,7 @@ class QtmotionHandler : public QObject {
       textEdit_ = nullptr;
     }
     target_.clear();
-    state_ = QtmotionState::DefaultState;
+    state_ = QtmotionState::Inactive;
     currentEditor_ = nullptr;
   }
 
@@ -324,8 +288,9 @@ class QtmotionHandler : public QObject {
 
       // Handle ESC key press.
       QKeyEvent* e = static_cast<QKeyEvent*>(event);
-      if (e->key() == Qt::Key_Escape)
+      if (e->key() == Qt::Key_Escape) {
         return handleKeyPress(e);
+      }
     }
 
     return false;
@@ -337,31 +302,37 @@ class QtmotionHandler : public QObject {
       log("Cancelling");
 
       QtmotionState tmpState = state_;
-      if (tmpState == QtmotionState::WaitForInputTargetCode) {
+      if (tmpState == QtmotionState::WaitingForSelectionOrMoreCharacters) {
         textEdit_->viewport()->update();
       }
+
       resetQtmotion();
 
       return true;
-
-    } else if (state_ == QtmotionState::QtmotionTriggered && !isModifierKey(e->key())) {
+    } else if (state_ == QtmotionState::BeforeFirstCharacter && !isModifierKey(e->key())) {
       log("Just triggered with " + e->text().toStdString());
 
       QChar target(e->key());
       target = target.toLower();
-      if (e->modifiers() == Qt::ShiftModifier)
+
+      if (e->modifiers() == Qt::ShiftModifier) {
         target = target.toUpper();
+      }
+
       if (textEdit_) {
         target_.findMatchingPositions(textEdit_, target);
       } else {
-        qDebug() << "QtmotionHandler::handleKeyPress() => Error: current editor is null";
+        log("textEdit_ is nullptr");
       }
+
       if (!target_.isEmpty()) {
-        state_ = QtmotionState::WaitForInputTargetCode;
+        state_ = QtmotionState::WaitingForSelectionOrMoreCharacters;
         textEdit_->viewport()->update();
       }
+
       return true;
-    } else if (state_ == QtmotionState::WaitForInputTargetCode && !isModifierKey(e->key())) {
+    } else if (
+        state_ == QtmotionState::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
       if (e->key() == Qt::Key_Return) {
         log("Cycling group");
 
@@ -405,7 +376,7 @@ class QtmotionHandler : public QObject {
   }
 
   bool handlePaintEvent(QPaintEvent*) {
-    if (state_ == QtmotionState::WaitForInputTargetCode && !target_.isEmpty()) {
+    if (state_ == QtmotionState::WaitingForSelectionOrMoreCharacters && !target_.isEmpty()) {
       QTextCursor tc = textEdit_->textCursor();
       QFontMetrics fm(textEdit_->font());
       QPainter painter(textEdit_->viewport());
@@ -459,11 +430,11 @@ class QtmotionHandler : public QObject {
     return textEdit_ != nullptr;
   }
 
-  enum class QtmotionState { DefaultState, QtmotionTriggered, WaitForInputTargetCode };
+  enum class QtmotionState { Inactive, BeforeFirstCharacter, WaitingForSelectionOrMoreCharacters };
 
   Core::IEditor* currentEditor_ = nullptr;
   QPlainTextEdit* textEdit_ = nullptr;
-  QtmotionState state_ = QtmotionState::DefaultState;
+  QtmotionState state_ = QtmotionState::Inactive;
   QtmotionTarget target_;
 };
 
