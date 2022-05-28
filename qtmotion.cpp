@@ -43,8 +43,7 @@ inline void log(const std::string& str) {
   }
 }
 
-template <class Editor>
-QPair<int, int> getFirstAndLastVisiblePosition(Editor* editor) {
+QPair<int, int> getFirstAndLastVisiblePosition(QPlainTextEdit* editor) {
   QTextCursor cursor = editor->textCursor();
   QTextDocument* doc = editor->document();
 
@@ -79,8 +78,7 @@ QPair<int, int> getFirstAndLastVisiblePosition(Editor* editor) {
   return QPair<int, int>(firstPos, lastPos);
 }
 
-template <class Editor>
-void moveToPosition(Editor* editor, int newPos, bool visualMode) {
+void moveToPosition(QPlainTextEdit* editor, int newPos, bool visualMode) {
   QTextBlock targetBlock = editor->document()->findBlock(newPos);
 
   if (!targetBlock.isValid()) {
@@ -96,7 +94,7 @@ void moveToPosition(Editor* editor, int newPos, bool visualMode) {
 
   QTextCursor textCursor = editor->textCursor();
   textCursor.setPosition(
-      selectNextCharacter ? newPos : newPos + 1,
+      selectNextCharacter ? newPos - 1 : newPos,
       keepSelection ? QTextCursor::KeepAnchor : QTextCursor::MoveAnchor);
 
   if (baseEditor) {
@@ -117,8 +115,7 @@ class QtmotionTarget : public QObject {
     targetPositions_.clear();
   }
 
-  template <class QEditor>
-  void searchTargetFromScreen(QEditor* editor, const QChar& target) {
+  void findMatchingPositions(QPlainTextEdit* editor, const QChar& target) {
     targetPositions_.clear();
 
     if (editor == nullptr) {
@@ -128,17 +125,19 @@ class QtmotionTarget : public QObject {
     currentGroup_ = 0;
     QTextDocument* doc = editor->document();
     int cursorPos = editor->textCursor().position();
+
     QPair<int, int> visibleRange = getFirstAndLastVisiblePosition(editor);
     int firstPos = visibleRange.first;
     int lastPos = visibleRange.second;
-    bool notCaseSensative = target.category() != QChar::Letter_Uppercase;
+    bool notCaseSensitive = target.category() != QChar::Letter_Uppercase;
 
+    // Go up and down from the current position matching the target query
     for (int offset = 1; cursorPos - offset >= firstPos || cursorPos + offset <= lastPos;
          offset++) {
       if (cursorPos + offset <= lastPos) {
         QChar c = doc->characterAt(cursorPos + offset);
 
-        if (notCaseSensative) {
+        if (notCaseSensitive) {
           c = c.toLower();
         }
 
@@ -150,7 +149,7 @@ class QtmotionTarget : public QObject {
       if (cursorPos - offset >= firstPos) {
         QChar c = doc->characterAt(cursorPos - offset);
 
-        if (notCaseSensative) {
+        if (notCaseSensitive) {
           c = c.toLower();
         }
 
@@ -159,6 +158,9 @@ class QtmotionTarget : public QObject {
         }
       }
     }
+
+    log("Found " + std::string(1, target.toLatin1()) + " in " +
+        std::to_string(targetPositions_.size()) + " positions");
   }
 
   bool isEmpty() const {
@@ -219,7 +221,8 @@ class QtmotionTarget : public QObject {
     auto it = std::find(kKeyOrder_.begin(), kKeyOrder_.end(), c.toLatin1());
 
     if (it != kKeyOrder_.end()) {
-      const int pos = std::distance(kKeyOrder_.begin(), it) + currentGroup_ * (int)kKeyOrder_.size();
+      const int pos =
+          std::distance(kKeyOrder_.begin(), it) + currentGroup_ * (int)kKeyOrder_.size();
 
       if (pos < targetPositions_.size()) {
         return targetPositions_[pos];
@@ -349,7 +352,7 @@ class QtmotionHandler : public QObject {
       if (e->modifiers() == Qt::ShiftModifier)
         target = target.toUpper();
       if (textEdit_) {
-        target_.searchTargetFromScreen(textEdit_, target);
+        target_.findMatchingPositions(textEdit_, target);
       } else {
         qDebug() << "QtmotionHandler::handleKeyPress() => Error: current editor is null";
       }
@@ -389,6 +392,7 @@ class QtmotionHandler : public QObject {
           resetQtmotion();
 
           if (plainEdit) {
+            log("Moving to position " + std::to_string(newPos));
             moveToPosition(plainEdit, newPos, isVisualMode());
           }
 
