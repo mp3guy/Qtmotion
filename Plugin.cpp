@@ -37,5 +37,3 @@ ExtensionSystem::IPlugin::ShutdownFlag Plugin::aboutToShutdown() {
 }
 
 } // namespace Qtmotion
-
-#include "Plugin.moc"
