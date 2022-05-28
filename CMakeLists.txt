@@ -19,6 +19,4 @@ add_qtc_plugin(Qtmotion
   SOURCES
     qtmotion.cpp
     qtmotion.h
-    qtmotion_global.h
-    qtmotionconstants.h
 )

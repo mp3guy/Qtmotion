@@ -1,7 +1,5 @@
 #pragma once
 
-#include "qtmotion_global.h"
-
 #include <memory>
 
 #include <extensionsystem/iplugin.h>
@@ -23,7 +21,7 @@ class QtmotionPlugin : public ExtensionSystem::IPlugin {
   ShutdownFlag aboutToShutdown() override;
 
  private:
-  std::unique_ptr<QtmotionHandler> m_handler;
+  std::unique_ptr<QtmotionHandler> handler_;
 };
 
 } // namespace Internal

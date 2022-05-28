@@ -1,5 +1,4 @@
 #include "qtmotion.h"
-#include "qtmotionconstants.h"
 
 #include <iostream>
 
@@ -438,16 +437,18 @@ class QtmotionHandler : public QObject {
   QtmotionTarget target_;
 };
 
-QtmotionPlugin::QtmotionPlugin() : m_handler(std::make_unique<QtmotionHandler>()) {}
+QtmotionPlugin::QtmotionPlugin() : handler_(std::make_unique<QtmotionHandler>()) {}
 
 QtmotionPlugin::~QtmotionPlugin() {}
 
 bool QtmotionPlugin::initialize(const QStringList&, QString*) {
   QAction* easyMotionSearchEntireScreen = new QAction(tr("Search entire screen"), this);
 
+  constexpr std::string_view kSearchScreenId = "Qtmotion.SearchScreen";
+
   Core::Command* searchScreenCmd = Core::ActionManager::registerAction(
       easyMotionSearchEntireScreen,
-      Constants::SEARCH_SCREEN_ID,
+      std::string(kSearchScreenId).c_str(),
       Core::Context(Core::Constants::C_EDIT_MODE));
 
   searchScreenCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+;")));
@@ -455,7 +456,7 @@ bool QtmotionPlugin::initialize(const QStringList&, QString*) {
   connect(
       easyMotionSearchEntireScreen,
       SIGNAL(triggered()),
-      m_handler.get(),
+      handler_.get(),
       SLOT(easyMotionForEntireScreenTriggered()));
 
   return true;
