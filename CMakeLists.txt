@@ -17,6 +17,6 @@ add_qtc_plugin(Qtmotion
   DEPENDS
     Qt6::Widgets
   SOURCES
-    qtmotion.cpp
-    qtmotion.h
+    Qtmotion.cpp
+    Qtmotion.h
 )

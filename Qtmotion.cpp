@@ -1,4 +1,4 @@
-#include "qtmotion.h"
+#include "Qtmotion.h"
 
 #include <iostream>
 
@@ -471,4 +471,4 @@ ExtensionSystem::IPlugin::ShutdownFlag QtmotionPlugin::aboutToShutdown() {
 } // namespace Internal
 } // namespace Qtmotion
 
-#include "qtmotion.moc"
+#include "Qtmotion.moc"
