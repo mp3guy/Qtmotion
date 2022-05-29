@@ -17,12 +17,12 @@ class TargetString {
 
   struct Target {
     int position;
-    QString value;
+    QChar selector;
   };
 
-  Target getTarget(int i) const;
+  const std::vector<Target>& selectables() const;
+  const std::vector<int>& potentialSelectables() const;
   int getTargetPos(const QChar& c) const;
-  int numMatches() const;
 
  private:
   static constexpr std::array<char, 52> kKeyOrder_ = {
@@ -31,6 +31,7 @@ class TargetString {
       'R', 'N', 'V', 'T', 'I', 'E', 'M', 'C', 'O', 'W', 'X', 'P', 'Q', 'Z', 'B', 'Y'};
 
   QString query_;
-  std::vector<int> targetPositions_;
+  std::vector<Target> selectables_;
+  std::vector<int> potentialSelectables_;
 };
 } // namespace Qtmotion
