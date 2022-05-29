@@ -202,11 +202,31 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
     QFontMetrics fm(textEdit_->font());
     QPainter painter(textEdit_->viewport());
 
+    textEdit_->viewport()->update();
+
     QPen pen;
     pen.setColor(QColor(255, 0, 0, 255));
     painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
     painter.setBrush(QBrush(QColor(255, 255, 0, 255)));
     painter.setFont(textEdit_->font());
+
+    {
+      QString toDraw = "Qtmotion: ";
+      const QRect textBoundingBox = fm.boundingRect(toDraw);
+      QRect rect;
+      rect.setLeft(textEdit_->viewport()->width() - textBoundingBox.width());
+      rect.setWidth(textBoundingBox.width());
+      rect.setTop(0);
+      rect.setHeight(textBoundingBox.height());
+
+      if (rect.intersects(textEdit_->viewport()->rect())) {
+        painter.setPen(Qt::NoPen);
+        painter.drawRect(rect);
+        painter.setPen(pen);
+        const int textHeight = rect.bottom() - fm.descent();
+        painter.drawText(rect.left(), textHeight, toDraw);
+      }
+    }
 
     for (int i = target_.getFirstTargetIndex(); i < target_.getLastTargetIndex(); ++i) {
       const TargetString::Target target = target_.getTarget(i);
