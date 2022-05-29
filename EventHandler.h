@@ -37,10 +37,10 @@ class EventHandler : public QObject {
 
   bool handleKeyPress(QKeyEvent* e);
 
-  bool handlePaintEvent(QPaintEvent*);
+  void handlePaintEvent(QPaintEvent*);
 
   static bool isModifierKey(int key);
-  static void moveToPosition(QPlainTextEdit* editor, int newPos, bool visualMode);
+  static void moveToPosition(QPlainTextEdit* textEdit, int newPos, bool visualMode);
 
   bool setEditor(Core::IEditor* e);
 

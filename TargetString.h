@@ -10,7 +10,7 @@ class TargetString : public QObject {
  public:
   TargetString();
 
-  void findMatchingPositions(QPlainTextEdit* editor, const QChar& target);
+  void findMatchingPositions(QPlainTextEdit* textEdit, const QChar& target);
 
   bool isEmpty() const;
   void clear();
@@ -22,7 +22,12 @@ class TargetString : public QObject {
   int getFirstTargetIndex() const;
   int getLastTargetIndex() const;
 
-  QPair<int, QChar> getTarget(int i) const;
+  struct Target {
+    int position;
+    QString value;
+  };
+
+  Target getTarget(int i) const;
   int getTargetPos(const QChar& c) const;
 
  private:

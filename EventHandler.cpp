@@ -64,8 +64,10 @@ bool EventHandler::eventFilter(QObject* obj, QEvent* event) {
     currentViewport->removeEventFilter(this);
     QCoreApplication::sendEvent(currentViewport, event);
     currentViewport->installEventFilter(this);
+
     QPaintEvent* paintEvent = static_cast<QPaintEvent*>(event);
     handlePaintEvent(paintEvent);
+
     return true;
   } else if (event->type() == QEvent::KeyPress && textEdit_) {
     enqueueEventFilter();
@@ -86,21 +88,21 @@ bool EventHandler::eventFilter(QObject* obj, QEvent* event) {
   return false;
 }
 
-void EventHandler::moveToPosition(QPlainTextEdit* editor, int newPos, bool visualMode) {
-  QTextBlock targetBlock = editor->document()->findBlock(newPos);
+void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos, bool visualMode) {
+  QTextBlock targetBlock = textEdit->document()->findBlock(newPos);
 
   if (!targetBlock.isValid()) {
-    targetBlock = editor->document()->lastBlock();
+    targetBlock = textEdit->document()->lastBlock();
   }
 
-  bool overwriteMode = editor->overwriteMode();
-  TextEditor::TextEditorWidget* baseEditor = qobject_cast<TextEditor::TextEditorWidget*>(editor);
+  bool overwriteMode = textEdit->overwriteMode();
+  TextEditor::TextEditorWidget* baseEditor = qobject_cast<TextEditor::TextEditorWidget*>(textEdit);
   bool visualBlockMode = baseEditor && baseEditor->multiTextCursor().hasMultipleCursors();
 
   bool selectNextCharacter = (overwriteMode || visualMode) && !visualBlockMode;
   bool keepSelection = visualMode || visualBlockMode;
 
-  QTextCursor textCursor = editor->textCursor();
+  QTextCursor textCursor = textEdit->textCursor();
   textCursor.setPosition(
       selectNextCharacter ? newPos - 1 : newPos,
       keepSelection ? QTextCursor::KeepAnchor : QTextCursor::MoveAnchor);
@@ -108,7 +110,7 @@ void EventHandler::moveToPosition(QPlainTextEdit* editor, int newPos, bool visua
   if (baseEditor) {
     baseEditor->setTextCursor(textCursor);
   } else {
-    editor->setTextCursor(textCursor);
+    textEdit->setTextCursor(textCursor);
   }
 
   if (visualBlockMode) {
@@ -121,8 +123,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
     // Exit the process
     std::cout << "Cancelling" << std::endl;
 
-    State tmpState = state_;
-    if (tmpState == State::WaitingForSelectionOrMoreCharacters) {
+    if (state_ == State::WaitingForSelectionOrMoreCharacters) {
       textEdit_->viewport()->update();
     }
 
@@ -177,13 +178,13 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
       int newPos = target_.getTargetPos(target);
 
       if (newPos >= 0) {
-        QPlainTextEdit* plainEdit = textEdit_;
+        QPlainTextEdit* textEdit = textEdit_;
         QWidget* viewport = textEdit_->viewport();
         reset();
 
-        if (plainEdit) {
+        if (textEdit) {
           std::cout << "Moving to position " << std::to_string(newPos) << std::endl;
-          moveToPosition(plainEdit, newPos, isVisualMode());
+          moveToPosition(textEdit, newPos, isVisualMode());
         }
 
         viewport->update();
@@ -194,7 +195,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
   return false;
 }
 
-bool EventHandler::handlePaintEvent(QPaintEvent*) {
+void EventHandler::handlePaintEvent(QPaintEvent*) {
   if (state_ == State::WaitingForSelectionOrMoreCharacters && !target_.isEmpty()) {
     QTextCursor tc = textEdit_->textCursor();
     QFontMetrics fm(textEdit_->font());
@@ -207,12 +208,12 @@ bool EventHandler::handlePaintEvent(QPaintEvent*) {
     painter.setFont(textEdit_->font());
 
     for (int i = target_.getFirstTargetIndex(); i < target_.getLastTargetIndex(); ++i) {
-      QPair<int, QChar> target = target_.getTarget(i);
-      tc.setPosition(target.first);
+      const TargetString::Target target = target_.getTarget(i);
+      tc.setPosition(target.position);
       QRect rect = textEdit_->cursorRect(tc);
 
       int targetCharFontWidth =
-          fm.horizontalAdvance(textEdit_->document()->characterAt(target.first));
+          fm.horizontalAdvance(textEdit_->document()->characterAt(target.position));
 
       if (targetCharFontWidth == 0) {
         targetCharFontWidth = fm.horizontalAdvance(QChar(ushort(' ')));
@@ -225,13 +226,12 @@ bool EventHandler::handlePaintEvent(QPaintEvent*) {
         painter.drawRect(rect);
         painter.setPen(pen);
         const int textHeight = rect.bottom() - fm.descent();
-        painter.drawText(rect.left(), textHeight, QString(target.second));
+        painter.drawText(rect.left(), textHeight, target.value);
       }
     }
 
     painter.end();
   }
-  return false;
 }
 
 bool EventHandler::isModifierKey(int key) {

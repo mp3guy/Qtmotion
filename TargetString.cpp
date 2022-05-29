@@ -10,20 +10,20 @@ TargetString::TargetString() {
   targetPositions_.clear();
 }
 
-void TargetString::findMatchingPositions(QPlainTextEdit* editor, const QChar& target) {
+void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& target) {
   targetPositions_.clear();
 
-  if (editor == nullptr) {
+  if (textEdit == nullptr) {
     return;
   }
 
   currentGroup_ = 0;
-  QTextDocument* doc = editor->document();
-  int cursorPos = editor->textCursor().position();
+  QTextDocument* doc = textEdit->document();
+  int cursorPos = textEdit->textCursor().position();
 
-  const QPoint bottomRight(editor->viewport()->width() - 1, editor->viewport()->height() - 1);
-  const int startPos = editor->cursorForPosition(QPoint(0, 0)).position();
-  const int endPos = editor->cursorForPosition(bottomRight).position();
+  const QPoint bottomRight(textEdit->viewport()->width() - 1, textEdit->viewport()->height() - 1);
+  const int startPos = textEdit->cursorForPosition(QPoint(0, 0)).position();
+  const int endPos = textEdit->cursorForPosition(bottomRight).position();
 
   bool notCaseSensitive = target.category() != QChar::Letter_Uppercase;
 
@@ -96,11 +96,12 @@ int TargetString::getLastTargetIndex() const {
   return onePastLastIndex;
 }
 
-QPair<int, QChar> TargetString::getTarget(int i) const {
+TargetString::Target TargetString::getTarget(int i) const {
   if (i < 0 || i > targetPositions_.size()) {
-    return QPair<int, QChar>(int(-1), QChar(0));
+    return Target{.position = -1, .value = QString()};
   } else {
-    return QPair<int, QChar>(targetPositions_[i], QChar(kKeyOrder_[i % kKeyOrder_.size()]));
+    return Target{
+        .position = targetPositions_[i], .value = QString(kKeyOrder_[i % kKeyOrder_.size()])};
   }
 }
 
