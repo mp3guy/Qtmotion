@@ -199,6 +199,16 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
     painter.setBrush(QBrush(QColor(255, 255, 0, 255)));
     painter.setFont(textEdit_->font());
 
+    auto drawRectText = [&, this](const QRect& rect, const QString& string) {
+      if (rect.intersects(textEdit_->viewport()->rect())) {
+        painter.setPen(Qt::NoPen);
+        painter.drawRect(rect);
+        painter.setPen(pen);
+        const int textHeight = rect.bottom() - fm.descent();
+        painter.drawText(rect.left(), textHeight, string);
+      }
+    };
+
     {
       QString toDraw = "Qtmotion: ";
 
@@ -217,14 +227,7 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
       rect.setWidth(textWidth);
       rect.setTop(0);
       rect.setHeight(textBoundingBox.height());
-
-      if (rect.intersects(textEdit_->viewport()->rect())) {
-        painter.setPen(Qt::NoPen);
-        painter.drawRect(rect);
-        painter.setPen(pen);
-        const int textHeight = rect.bottom() - fm.descent();
-        painter.drawText(rect.left(), textHeight, toDraw);
-      }
+      drawRectText(rect, toDraw);
     }
 
     if (!target_.isEmpty()) {
@@ -241,14 +244,7 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
         }
 
         rect.setWidth(targetCharFontWidth);
-
-        if (rect.intersects(textEdit_->viewport()->rect())) {
-          painter.setPen(Qt::NoPen);
-          painter.drawRect(rect);
-          painter.setPen(pen);
-          const int textHeight = rect.bottom() - fm.descent();
-          painter.drawText(rect.left(), textHeight, target.value);
-        }
+        drawRectText(rect, target.value);
       }
     }
 
