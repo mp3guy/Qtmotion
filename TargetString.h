@@ -11,15 +11,7 @@ class TargetString {
 
   void findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query);
 
-  bool isEmpty() const;
   void clear();
-
-  void nextGroup();
-  void previousGroup();
-  int getGroupNum();
-
-  int getFirstTargetIndex() const;
-  int getLastTargetIndex() const;
 
   const QString& query() const;
 
@@ -39,7 +31,6 @@ class TargetString {
       'R', 'N', 'V', 'T', 'I', 'E', 'M', 'C', 'O', 'W', 'X', 'P', 'Q', 'Z', 'B', 'Y'};
 
   QString query_;
-  int currentGroup_;
   std::vector<int> targetPositions_;
 };
 } // namespace Qtmotion

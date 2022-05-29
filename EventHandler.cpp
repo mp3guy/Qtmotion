@@ -140,46 +140,34 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
       target_.findMatchingPositions(textEdit_, target);
     }
 
-    if (!target_.isEmpty()) {
+    if (target_.numMatches() > 0) {
       state_ = State::WaitingForSelectionOrMoreCharacters;
       textEdit_->viewport()->update();
     }
 
     return true;
   } else if (state_ == State::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
-    if (e->key() == Qt::Key_Return) {
-      if (e->modifiers() == Qt::ShiftModifier) {
-        // Shift + Enter makes show previous
-        // group of target positions
-        target_.previousGroup();
-      } else {
-        // Enter makes show next
-        // group of target positions
-        target_.nextGroup();
-      }
-      textEdit_->viewport()->update();
-    } else {
-      QChar target(e->key());
-      target = target.toLower();
+    QChar target(e->key());
+    target = target.toLower();
 
-      if (e->modifiers() == Qt::ShiftModifier) {
-        target = target.toUpper();
-      }
-
-      int newPos = target_.getTargetPos(target);
-
-      if (newPos >= 0) {
-        QPlainTextEdit* textEdit = textEdit_;
-        QWidget* viewport = textEdit_->viewport();
-        reset();
-
-        if (textEdit) {
-          moveToPosition(textEdit, newPos, isVisualMode());
-        }
-
-        viewport->update();
-      }
+    if (e->modifiers() == Qt::ShiftModifier) {
+      target = target.toUpper();
     }
+
+    int newPos = target_.getTargetPos(target);
+
+    if (newPos >= 0) {
+      QPlainTextEdit* textEdit = textEdit_;
+      QWidget* viewport = textEdit_->viewport();
+      reset();
+
+      if (textEdit) {
+        moveToPosition(textEdit, newPos, isVisualMode());
+      }
+
+      viewport->update();
+    }
+
     return true;
   }
   return false;
@@ -194,10 +182,10 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
     textEdit_->viewport()->update();
 
     QPen pen;
-    pen.setColor(QColor(255, 0, 0, 255));
     painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    painter.setBrush(QBrush(QColor(255, 255, 0, 255)));
-    painter.setFont(textEdit_->font());
+    QFont font = textEdit_->font();
+    font.setBold(true);
+    painter.setFont(font);
 
     auto drawRectText = [&, this](const QRect& rect, const QString& string) {
       if (rect.intersects(textEdit_->viewport()->rect())) {
@@ -227,25 +215,29 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
       rect.setWidth(textWidth);
       rect.setTop(0);
       rect.setHeight(textBoundingBox.height());
+
+      pen.setColor(QColor(170, 170, 255, 255));
+      painter.setBrush(QBrush(QColor(54, 54, 85, 255)));
       drawRectText(rect, toDraw);
     }
 
-    if (!target_.isEmpty()) {
-      for (int i = target_.getFirstTargetIndex(); i < target_.getLastTargetIndex(); ++i) {
-        const TargetString::Target target = target_.getTarget(i);
-        tc.setPosition(target.position);
-        QRect rect = textEdit_->cursorRect(tc);
+    for (int i = 0; i < target_.numMatches(); ++i) {
+      const TargetString::Target target = target_.getTarget(i);
+      tc.setPosition(target.position);
+      QRect rect = textEdit_->cursorRect(tc);
 
-        int targetCharFontWidth =
-            fm.horizontalAdvance(textEdit_->document()->characterAt(target.position));
+      int targetCharFontWidth =
+          fm.horizontalAdvance(textEdit_->document()->characterAt(target.position));
 
-        if (targetCharFontWidth == 0) {
-          targetCharFontWidth = fm.horizontalAdvance(QChar(ushort(' ')));
-        }
-
-        rect.setWidth(targetCharFontWidth);
-        drawRectText(rect, target.value);
+      if (targetCharFontWidth == 0) {
+        targetCharFontWidth = fm.horizontalAdvance(" ");
       }
+
+      rect.setWidth(targetCharFontWidth);
+
+      pen.setColor(QColor(170, 170, 255, 255));
+      painter.setBrush(QBrush(QColor(54, 54, 85, 255)));
+      drawRectText(rect, target.value);
     }
 
     painter.end();

@@ -15,7 +15,6 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
     return;
   }
 
-  currentGroup_ = 0;
   QTextDocument* doc = textEdit->document();
   int cursorPos = textEdit->textCursor().position();
 
@@ -59,59 +58,14 @@ const QString& TargetString::query() const {
   return query_;
 }
 
-bool TargetString::isEmpty() const {
-  return targetPositions_.size() == 0;
-}
-
-void TargetString::nextGroup() {
-  currentGroup_++;
-  if (currentGroup_ >= getGroupNum()) {
-    currentGroup_ = 0;
-  }
-}
-
-void TargetString::previousGroup() {
-  currentGroup_--;
-  if (currentGroup_ < 0) {
-    currentGroup_ = getGroupNum() - 1;
-    if (currentGroup_ < 0) {
-      currentGroup_ = 0;
-    }
-  }
-}
-
 void TargetString::clear() {
-  currentGroup_ = 0;
   targetPositions_.clear();
 }
 
-int TargetString::getFirstTargetIndex() const {
-  return (int)(currentGroup_ * kKeyOrder_.size());
-}
-
-int TargetString::getLastTargetIndex() const {
-  int onePastLastIndex = (int)(currentGroup_ * kKeyOrder_.size() + kKeyOrder_.size());
-  if (onePastLastIndex > targetPositions_.size()) {
-    onePastLastIndex = targetPositions_.size();
-  }
-  return onePastLastIndex;
-}
-
 TargetString::Target TargetString::getTarget(int i) const {
-  if (i < 0 || i > targetPositions_.size()) {
-    return Target{.position = -1, .value = QString()};
-  } else {
-    return Target{
-        .position = targetPositions_[i], .value = QString(kKeyOrder_[i % kKeyOrder_.size()])};
-  }
-}
-
-int TargetString::getGroupNum() {
-  if (targetPositions_.size() == 0) {
-    return 0;
-  } else {
-    return ((int)targetPositions_.size() - 1) / (int)kKeyOrder_.size() + 1;
-  }
+  return Target{
+      .position = targetPositions_[i],
+      .value = i < kKeyOrder_.size() ? QString(kKeyOrder_[i]) : "*"};
 }
 
 int TargetString::numMatches() const {
@@ -122,7 +76,7 @@ int TargetString::getTargetPos(const QChar& c) const {
   auto it = std::find(kKeyOrder_.begin(), kKeyOrder_.end(), c.toLatin1());
 
   if (it != kKeyOrder_.end()) {
-    const int pos = std::distance(kKeyOrder_.begin(), it) + currentGroup_ * (int)kKeyOrder_.size();
+    const int pos = std::distance(kKeyOrder_.begin(), it);
 
     if (pos < targetPositions_.size()) {
       return targetPositions_[pos];
