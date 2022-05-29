@@ -58,8 +58,9 @@ bool EventHandler::isVisualMode() const {
 
 bool EventHandler::eventFilter(QObject* obj, QEvent* event) {
   QWidget* currentViewport = qobject_cast<QWidget*>(obj);
+  QPlainTextEdit* currentTextEdit = qobject_cast<QPlainTextEdit*>(obj);
 
-  if (currentViewport != nullptr && event->type() == QEvent::Paint) {
+  if (currentTextEdit == nullptr && currentViewport != nullptr && event->type() == QEvent::Paint) {
     // Handle the painter event last to prevent the area painted from being overwritten
     currentViewport->removeEventFilter(this);
     QCoreApplication::sendEvent(currentViewport, event);

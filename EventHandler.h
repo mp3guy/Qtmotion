@@ -33,7 +33,7 @@ class EventHandler : public QObject {
 
   bool isVisualMode() const;
 
-  bool eventFilter(QObject* obj, QEvent* event);
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
   bool handleKeyPress(QKeyEvent* e);
 
