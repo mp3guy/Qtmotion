@@ -6,11 +6,9 @@
 #include <QTextDocument>
 
 namespace Qtmotion {
-TargetString::TargetString() {
-  targetPositions_.clear();
-}
+TargetString::TargetString() {}
 
-void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& target) {
+void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query) {
   targetPositions_.clear();
 
   if (textEdit == nullptr) {
@@ -25,7 +23,9 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
   const int startPos = textEdit->cursorForPosition(QPoint(0, 0)).position();
   const int endPos = textEdit->cursorForPosition(bottomRight).position();
 
-  bool notCaseSensitive = target.category() != QChar::Letter_Uppercase;
+  bool notCaseSensitive = query.category() != QChar::Letter_Uppercase;
+
+  query_ = query;
 
   // Go up and down from the current position matching the target query
   for (int offset = 1; cursorPos - offset >= startPos || cursorPos + offset <= endPos; offset++) {
@@ -36,7 +36,7 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
         c = c.toLower();
       }
 
-      if (c == target) {
+      if (c == query) {
         targetPositions_.push_back(cursorPos + offset);
       }
     }
@@ -48,14 +48,15 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
         c = c.toLower();
       }
 
-      if (c == target) {
+      if (c == query) {
         targetPositions_.push_back(cursorPos - offset);
       }
     }
   }
+}
 
-  std::cout << "Found " << std::string(1, target.toLatin1()) << " in "
-            << std::to_string(targetPositions_.size()) << " positions" << std::endl;
+const QString& TargetString::query() const {
+  return query_;
 }
 
 bool TargetString::isEmpty() const {
@@ -111,6 +112,10 @@ int TargetString::getGroupNum() {
   } else {
     return ((int)targetPositions_.size() - 1) / (int)kKeyOrder_.size() + 1;
   }
+}
+
+int TargetString::numMatches() const {
+  return targetPositions_.size();
 }
 
 int TargetString::getTargetPos(const QChar& c) const {

@@ -22,7 +22,6 @@ void EventHandler::triggerKeyPressed() {
   if (setEditor(currentEditor_)) {
     state_ = State::BeforeFirstCharacter;
     enqueueEventFilter();
-    std::cout << "Initiated" << std::endl;
   } else {
     currentEditor_ = nullptr;
   }
@@ -122,8 +121,6 @@ void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos, bool vis
 bool EventHandler::handleKeyPress(QKeyEvent* e) {
   if (e->key() == Qt::Key_Escape) {
     // Exit the process
-    std::cout << "Cancelling" << std::endl;
-
     if (state_ == State::WaitingForSelectionOrMoreCharacters) {
       textEdit_->viewport()->update();
     }
@@ -132,8 +129,6 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
 
     return true;
   } else if (state_ == State::BeforeFirstCharacter && !isModifierKey(e->key())) {
-    std::cout << "Just triggered with " << e->text().toStdString() << std::endl;
-
     QChar target(e->key());
     target = target.toLower();
 
@@ -143,8 +138,6 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
 
     if (textEdit_) {
       target_.findMatchingPositions(textEdit_, target);
-    } else {
-      std::cout << "textEdit_ is nullptr" << std::endl;
     }
 
     if (!target_.isEmpty()) {
@@ -155,8 +148,6 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
     return true;
   } else if (state_ == State::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
     if (e->key() == Qt::Key_Return) {
-      std::cout << "Cycling group" << std::endl;
-
       if (e->modifiers() == Qt::ShiftModifier) {
         // Shift + Enter makes show previous
         // group of target positions
@@ -170,7 +161,6 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
     } else {
       QChar target(e->key());
       target = target.toLower();
-      std::cout << "Selected " << e->text().toStdString() << std::endl;
 
       if (e->modifiers() == Qt::ShiftModifier) {
         target = target.toUpper();
@@ -184,7 +174,6 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
         reset();
 
         if (textEdit) {
-          std::cout << "Moving to position " << std::to_string(newPos) << std::endl;
           moveToPosition(textEdit, newPos, isVisualMode());
         }
 
@@ -197,7 +186,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
 }
 
 void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
-  if (state_ == State::WaitingForSelectionOrMoreCharacters && !target_.isEmpty()) {
+  if (state_ != State::Inactive) {
     QTextCursor tc = textEdit_->textCursor();
     QFontMetrics fm(textEdit_->font());
     QPainter painter(textEdit_->viewport());
@@ -212,10 +201,20 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
 
     {
       QString toDraw = "Qtmotion: ";
+
+      if (state_ == State::BeforeFirstCharacter) {
+        toDraw.append(QString("Waiting for input"));
+      } else if (state_ == State::WaitingForSelectionOrMoreCharacters) {
+        toDraw.append(
+            QString("Query \"") + target_.query() + "\" found in " +
+            QString::fromStdString(std::to_string(target_.numMatches())) + " locations");
+      }
+
       const QRect textBoundingBox = fm.boundingRect(toDraw);
+      const int textWidth = fm.horizontalAdvance(toDraw);
       QRect rect;
-      rect.setLeft(textEdit_->viewport()->width() - textBoundingBox.width());
-      rect.setWidth(textBoundingBox.width());
+      rect.setLeft(textEdit_->viewport()->width() - textWidth);
+      rect.setWidth(textWidth);
       rect.setTop(0);
       rect.setHeight(textBoundingBox.height());
 
@@ -228,26 +227,28 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
       }
     }
 
-    for (int i = target_.getFirstTargetIndex(); i < target_.getLastTargetIndex(); ++i) {
-      const TargetString::Target target = target_.getTarget(i);
-      tc.setPosition(target.position);
-      QRect rect = textEdit_->cursorRect(tc);
+    if (!target_.isEmpty()) {
+      for (int i = target_.getFirstTargetIndex(); i < target_.getLastTargetIndex(); ++i) {
+        const TargetString::Target target = target_.getTarget(i);
+        tc.setPosition(target.position);
+        QRect rect = textEdit_->cursorRect(tc);
 
-      int targetCharFontWidth =
-          fm.horizontalAdvance(textEdit_->document()->characterAt(target.position));
+        int targetCharFontWidth =
+            fm.horizontalAdvance(textEdit_->document()->characterAt(target.position));
 
-      if (targetCharFontWidth == 0) {
-        targetCharFontWidth = fm.horizontalAdvance(QChar(ushort(' ')));
-      }
+        if (targetCharFontWidth == 0) {
+          targetCharFontWidth = fm.horizontalAdvance(QChar(ushort(' ')));
+        }
 
-      rect.setWidth(targetCharFontWidth);
+        rect.setWidth(targetCharFontWidth);
 
-      if (rect.intersects(textEdit_->viewport()->rect())) {
-        painter.setPen(Qt::NoPen);
-        painter.drawRect(rect);
-        painter.setPen(pen);
-        const int textHeight = rect.bottom() - fm.descent();
-        painter.drawText(rect.left(), textHeight, target.value);
+        if (rect.intersects(textEdit_->viewport()->rect())) {
+          painter.setPen(Qt::NoPen);
+          painter.drawRect(rect);
+          painter.setPen(pen);
+          const int textHeight = rect.bottom() - fm.descent();
+          painter.drawText(rect.left(), textHeight, target.value);
+        }
       }
     }
 

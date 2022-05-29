@@ -9,7 +9,7 @@ class TargetString {
  public:
   TargetString();
 
-  void findMatchingPositions(QPlainTextEdit* textEdit, const QChar& target);
+  void findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query);
 
   bool isEmpty() const;
   void clear();
@@ -21,6 +21,8 @@ class TargetString {
   int getFirstTargetIndex() const;
   int getLastTargetIndex() const;
 
+  const QString& query() const;
+
   struct Target {
     int position;
     QString value;
@@ -28,6 +30,7 @@ class TargetString {
 
   Target getTarget(int i) const;
   int getTargetPos(const QChar& c) const;
+  int numMatches() const;
 
  private:
   static constexpr std::array<char, 52> kKeyOrder_ = {
@@ -35,6 +38,7 @@ class TargetString {
       'o', 'w', 'x', 'p', 'q', 'z', 'b', 'y', 'J', 'F', 'K', 'D', 'L', 'S', 'A', 'H', 'G', 'U',
       'R', 'N', 'V', 'T', 'I', 'E', 'M', 'C', 'O', 'W', 'X', 'P', 'Q', 'Z', 'B', 'Y'};
 
+  QString query_;
   int currentGroup_;
   std::vector<int> targetPositions_;
 };
