@@ -5,8 +5,7 @@
 class QPlainTextEdit;
 
 namespace Qtmotion {
-class TargetString : public QObject {
-  Q_OBJECT
+class TargetString {
  public:
   TargetString();
 
@@ -37,6 +36,6 @@ class TargetString : public QObject {
       'R', 'N', 'V', 'T', 'I', 'E', 'M', 'C', 'O', 'W', 'X', 'P', 'Q', 'Z', 'B', 'Y'};
 
   int currentGroup_;
-  QVector<int> targetPositions_;
+  std::vector<int> targetPositions_;
 };
 } // namespace Qtmotion

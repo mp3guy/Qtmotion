@@ -195,7 +195,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
   return false;
 }
 
-void EventHandler::handlePaintEvent(QPaintEvent*) {
+void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
   if (state_ == State::WaitingForSelectionOrMoreCharacters && !target_.isEmpty()) {
     QTextCursor tc = textEdit_->textCursor();
     QFontMetrics fm(textEdit_->font());

@@ -37,7 +37,7 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
       }
 
       if (c == target) {
-        targetPositions_ << (cursorPos + offset);
+        targetPositions_.push_back(cursorPos + offset);
       }
     }
 
@@ -49,7 +49,7 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
       }
 
       if (c == target) {
-        targetPositions_ << (cursorPos - offset);
+        targetPositions_.push_back(cursorPos - offset);
       }
     }
   }
