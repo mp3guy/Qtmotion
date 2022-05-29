@@ -226,8 +226,9 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
       tc.setPosition(target.position);
       QRect rect = textEdit_->cursorRect(tc);
 
-      int targetCharFontWidth =
-          fm.horizontalAdvance(textEdit_->document()->characterAt(target.position));
+      const QChar character = textEdit_->document()->characterAt(target.position);
+
+      int targetCharFontWidth = fm.horizontalAdvance(character);
 
       if (targetCharFontWidth == 0) {
         targetCharFontWidth = fm.horizontalAdvance(" ");
@@ -235,9 +236,15 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
 
       rect.setWidth(targetCharFontWidth);
 
-      pen.setColor(QColor(170, 170, 255, 255));
-      painter.setBrush(QBrush(QColor(54, 54, 85, 255)));
-      drawRectText(rect, target.value);
+      if (target.value == "*") {
+        pen.setColor(QColor(255, 170, 170, 255));
+        painter.setBrush(QBrush(QColor(85, 54, 54, 255)));
+        drawRectText(rect, character);
+      } else {
+        pen.setColor(QColor(170, 170, 255, 255));
+        painter.setBrush(QBrush(QColor(54, 54, 85, 255)));
+        drawRectText(rect, target.value);
+      }
     }
 
     painter.end();
