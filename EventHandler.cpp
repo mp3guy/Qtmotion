@@ -140,10 +140,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
       target_.findMatchingPositions(textEdit_, target);
     }
 
-    if (target_.selectables().size() > 0) {
-      state_ = State::WaitingForSelectionOrMoreCharacters;
-      textEdit_->viewport()->update();
-    }
+    state_ = State::WaitingForSelectionOrMoreCharacters;
 
     return true;
   } else if (state_ == State::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
@@ -167,7 +164,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
 
       viewport->update();
     } else if (textEdit_) {
-      target_.appendCharUpdateMatches(textEdit_, target);
+      target_.findMatchingPositions(textEdit_, target);
     }
 
     return true;
