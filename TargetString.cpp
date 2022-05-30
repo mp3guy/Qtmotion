@@ -10,7 +10,6 @@ namespace Qtmotion {
 TargetString::TargetString() {}
 
 void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query) {
-  // TODO Add separate method for appending chars
   if (textEdit == nullptr) {
     return;
   }
@@ -23,8 +22,6 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
   const int endPos = textEdit->cursorForPosition(bottomRight).position();
 
   bool notCaseSensitive = query.category() != QChar::Letter_Uppercase;
-
-  query_ = query;
 
   std::vector<int> matchingPositions;
 
@@ -73,6 +70,55 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
   for (size_t i = validCharChoices.size(); i < matchingPositions.size(); i++) {
     potentialSelectables_.push_back(matchingPositions[i]);
   }
+
+  query_ = query;
+}
+
+void TargetString::appendCharUpdateMatches(QPlainTextEdit* textEdit, const QChar& query) {
+  if (textEdit == nullptr || query_.isEmpty()) {
+    return;
+  }
+
+  QTextDocument* doc = textEdit->document();
+
+  // Go through the selectables and remove the ones that don't match the query
+  std::vector<int> newPositions;
+
+  for (const auto& selectable : selectables_) {
+    if (doc->characterAt(selectable.position + query_.length()) == query) {
+      newPositions.push_back(selectable.position);
+    }
+  }
+
+  for (const auto& position : potentialSelectables_) {
+    if (doc->characterAt(position + query_.length()) == query) {
+      newPositions.push_back(position);
+    }
+  }
+
+  selectables_.clear();
+  potentialSelectables_.clear();
+
+  // TODO refactor this and prev method
+  //  Now, find characters the set of characters that don't follow any of the matching positions
+  std::vector<char> validCharChoices;
+  validCharChoices.insert(validCharChoices.end(), kKeyOrder_.begin(), kKeyOrder_.end());
+
+  for (const auto position : newPositions) {
+    std::erase(validCharChoices, doc->characterAt(position + query_.length() + 1).toLatin1());
+  }
+
+  // Provide the initial set of selectables
+  for (size_t i = 0; i < validCharChoices.size() && i < newPositions.size(); i++) {
+    selectables_.push_back(Target{.position = newPositions[i], .selector = validCharChoices[i]});
+  }
+
+  // Backup the ambiguous ones for later
+  for (size_t i = validCharChoices.size(); i < newPositions.size(); i++) {
+    potentialSelectables_.push_back(newPositions[i]);
+  }
+
+  query_ += query;
 }
 
 const QString& TargetString::query() const {
@@ -82,6 +128,7 @@ const QString& TargetString::query() const {
 void TargetString::clear() {
   query_ = QString();
   selectables_.clear();
+  potentialSelectables_.clear();
 }
 
 const std::vector<TargetString::Target>& TargetString::selectables() const {

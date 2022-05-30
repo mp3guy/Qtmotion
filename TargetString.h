@@ -10,6 +10,7 @@ class TargetString {
   TargetString();
 
   void findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query);
+  void appendCharUpdateMatches(QPlainTextEdit* textEdit, const QChar& query);
 
   void clear();
 

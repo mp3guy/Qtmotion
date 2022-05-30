@@ -166,6 +166,8 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
       }
 
       viewport->update();
+    } else if (textEdit_) {
+      target_.appendCharUpdateMatches(textEdit_, target);
     }
 
     return true;
