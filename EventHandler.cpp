@@ -20,7 +20,7 @@ void EventHandler::triggerKeyPressed() {
   currentEditor_ = Core::EditorManager::currentEditor();
 
   if (setEditor(currentEditor_)) {
-    state_ = State::BeforeFirstCharacter;
+    state_ = State::WaitingForSelectionOrMoreCharacters;
     enqueueEventFilter();
   } else {
     currentEditor_ = nullptr;
@@ -128,21 +128,6 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
     reset();
 
     return true;
-  } else if (state_ == State::BeforeFirstCharacter && !isModifierKey(e->key())) {
-    QChar target(e->key());
-    target = target.toLower();
-
-    if (e->modifiers() == Qt::ShiftModifier) {
-      target = target.toUpper();
-    }
-
-    if (textEdit_) {
-      target_.findMatchingPositions(textEdit_, target);
-    }
-
-    state_ = State::WaitingForSelectionOrMoreCharacters;
-
-    return true;
   } else if (state_ == State::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
     QChar target(e->key());
     target = target.toLower();
@@ -199,9 +184,7 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
     {
       QString toDraw = "Qtmotion: ";
 
-      if (state_ == State::BeforeFirstCharacter) {
-        toDraw.append(QString("Waiting for input"));
-      } else if (state_ == State::WaitingForSelectionOrMoreCharacters) {
+      if (state_ == State::WaitingForSelectionOrMoreCharacters) {
         toDraw.append(
             QString("Query \"") + target_.query() + "\" found in " +
             QString::fromStdString(std::to_string(
