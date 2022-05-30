@@ -17,8 +17,7 @@ class EventHandler : public QObject {
   Q_OBJECT
 
  public:
-  EventHandler();
-  ~EventHandler();
+  EventHandler() = default;
 
  public slots:
   void triggerKeyPressed();

@@ -11,8 +11,6 @@
 namespace Qtmotion {
 Plugin::Plugin() : handler_(std::make_unique<EventHandler>()) {}
 
-Plugin::~Plugin() {}
-
 bool Plugin::initialize(const QStringList&, QString*) {
   QAction* searchEntireScreen = new QAction(tr("Search entire screen"), this);
 

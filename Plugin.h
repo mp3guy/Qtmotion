@@ -13,7 +13,6 @@ class Plugin : public ExtensionSystem::IPlugin {
 
  public:
   Plugin();
-  ~Plugin() override;
 
   bool initialize(const QStringList& arguments, QString* errorString) override;
   void extensionsInitialized() override;

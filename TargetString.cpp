@@ -7,8 +7,6 @@
 #include <QTextDocument>
 
 namespace Qtmotion {
-TargetString::TargetString() {}
-
 void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query) {
   if (textEdit == nullptr) {
     return;

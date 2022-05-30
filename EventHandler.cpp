@@ -10,10 +10,6 @@
 #include <QTextBlock>
 
 namespace Qtmotion {
-EventHandler::EventHandler() {}
-
-EventHandler::~EventHandler() {}
-
 void EventHandler::triggerKeyPressed() {
   reset();
 
