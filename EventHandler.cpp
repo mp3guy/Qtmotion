@@ -51,10 +51,6 @@ void EventHandler::reset() {
   currentEditor_ = nullptr;
 }
 
-bool EventHandler::isVisualMode() const {
-  return textEdit_ && textEdit_->textCursor().hasSelection();
-}
-
 bool EventHandler::eventFilter(QObject* obj, QEvent* event) {
   QWidget* currentViewport = qobject_cast<QWidget*>(obj);
   QPlainTextEdit* currentTextEdit = qobject_cast<QPlainTextEdit*>(obj);
@@ -88,32 +84,16 @@ bool EventHandler::eventFilter(QObject* obj, QEvent* event) {
   return false;
 }
 
-void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos, bool visualMode) {
+void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos) {
   QTextBlock targetBlock = textEdit->document()->findBlock(newPos);
 
   if (!targetBlock.isValid()) {
     targetBlock = textEdit->document()->lastBlock();
   }
 
-  bool overwriteMode = textEdit->overwriteMode();
-  TextEditor::TextEditorWidget* baseEditor = qobject_cast<TextEditor::TextEditorWidget*>(textEdit);
-  bool visualBlockMode = baseEditor && baseEditor->multiTextCursor().hasMultipleCursors();
-
-  bool selectNextCharacter = (overwriteMode || visualMode) && !visualBlockMode;
-  bool keepSelection = visualMode || visualBlockMode;
-
   QTextCursor textCursor = textEdit->textCursor();
   textCursor.setPosition(newPos);
-
-  if (baseEditor) {
-    baseEditor->setTextCursor(textCursor);
-  } else {
-    textEdit->setTextCursor(textCursor);
-  }
-
-  if (visualBlockMode) {
-    baseEditor->setTextCursor(baseEditor->textCursor());
-  }
+  textEdit->setTextCursor(textCursor);
 }
 
 bool EventHandler::handleKeyPress(QKeyEvent* e) {
@@ -145,7 +125,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
         reset();
 
         if (textEdit) {
-          moveToPosition(textEdit, newPos, isVisualMode());
+          moveToPosition(textEdit, newPos);
         }
 
         viewport->update();

@@ -31,8 +31,6 @@ class EventHandler : public QObject {
 
   void reset();
 
-  bool isVisualMode() const;
-
   bool eventFilter(QObject* obj, QEvent* event) override;
 
   bool handleKeyPress(QKeyEvent* e);
@@ -40,7 +38,7 @@ class EventHandler : public QObject {
   void handlePaintEvent(QPaintEvent*);
 
   static bool isModifierKey(int key);
-  static void moveToPosition(QPlainTextEdit* textEdit, int newPos, bool visualMode);
+  static void moveToPosition(QPlainTextEdit* textEdit, int newPos);
 
   bool setEditor(Core::IEditor* e);
 
