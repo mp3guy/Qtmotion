@@ -129,27 +129,31 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
 
     return true;
   } else if (state_ == State::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
-    QChar target(e->key());
-    target = target.toLower();
+    if (e->key() == Qt::Key_Backspace) {
+      target_.backspace(textEdit_);
+    } else {
+      QChar target(e->key());
+      target = target.toLower();
 
-    if (e->modifiers() == Qt::ShiftModifier) {
-      target = target.toUpper();
-    }
-
-    int newPos = target_.getTargetPos(target);
-
-    if (newPos >= 0) {
-      QPlainTextEdit* textEdit = textEdit_;
-      QWidget* viewport = textEdit_->viewport();
-      reset();
-
-      if (textEdit) {
-        moveToPosition(textEdit, newPos, isVisualMode());
+      if (e->modifiers() == Qt::ShiftModifier) {
+        target = target.toUpper();
       }
 
-      viewport->update();
-    } else if (textEdit_) {
-      target_.findMatchingPositions(textEdit_, target);
+      int newPos = target_.getTargetPos(target);
+
+      if (newPos >= 0) {
+        QPlainTextEdit* textEdit = textEdit_;
+        QWidget* viewport = textEdit_->viewport();
+        reset();
+
+        if (textEdit) {
+          moveToPosition(textEdit, newPos, isVisualMode());
+        }
+
+        viewport->update();
+      } else if (textEdit_) {
+        target_.findMatchingPositions(textEdit_, target);
+      }
     }
 
     return true;
@@ -200,8 +204,13 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
       rect.setTop(0);
       rect.setHeight(textBoundingBox.height());
 
-      pen.setColor(QColor(170, 170, 255, 255));
-      painter.setBrush(QBrush(QColor(54, 54, 85, 255)));
+      if (target_.selectables().size() > 0) {
+        pen.setColor(QColor(170, 170, 255, 255));
+        painter.setBrush(QBrush(QColor(54, 54, 85, 255)));
+      } else {
+        pen.setColor(QColor(255, 170, 170, 255));
+        painter.setBrush(QBrush(QColor(85, 54, 54, 255)));
+      }
       drawRectText(rect, toDraw);
     }
 

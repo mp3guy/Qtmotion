@@ -15,6 +15,8 @@ class TargetString {
 
   const QString& query() const;
 
+  void backspace(QPlainTextEdit* textEdit);
+
   struct Target {
     int position;
     QChar selector;

@@ -54,18 +54,18 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
         }
       }
     }
-  }
-
-  // If we have run before, clear out incompatible matches
-  for (const auto& selectable : selectables_) {
-    if (doc->characterAt(selectable.position + query_.length()) == query) {
-      matchingPositions.push_back(selectable.position);
+  } else {
+    // If we have run before, clear out incompatible matches
+    for (const auto& selectable : selectables_) {
+      if (doc->characterAt(selectable.position + query_.length()) == query) {
+        matchingPositions.push_back(selectable.position);
+      }
     }
-  }
 
-  for (const auto& position : potentialSelectables_) {
-    if (doc->characterAt(position + query_.length()) == query) {
-      matchingPositions.push_back(position);
+    for (const auto& position : potentialSelectables_) {
+      if (doc->characterAt(position + query_.length()) == query) {
+        matchingPositions.push_back(position);
+      }
     }
   }
 
@@ -95,6 +95,18 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
   }
 
   query_ += query;
+}
+
+void TargetString::backspace(QPlainTextEdit* textEdit) {
+  if (query_.length()) {
+    QString queryLessOne = query_.mid(0, query_.length() - 1);
+
+    clear();
+
+    for (const QChar c : queryLessOne) {
+      findMatchingPositions(textEdit, c);
+    }
+  }
 }
 
 const QString& TargetString::query() const {
