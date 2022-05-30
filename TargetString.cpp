@@ -77,7 +77,10 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
   validCharChoices.insert(validCharChoices.end(), kKeyOrder_.begin(), kKeyOrder_.end());
 
   for (const auto position : matchingPositions) {
-    std::erase(validCharChoices, doc->characterAt(position + query_.length() + 1).toLatin1());
+    std::erase(
+        validCharChoices, doc->characterAt(position + query_.length() + 1).toUpper().toLatin1());
+    std::erase(
+        validCharChoices, doc->characterAt(position + query_.length() + 1).toLower().toLatin1());
   }
 
   // Provide the initial set of selectables
