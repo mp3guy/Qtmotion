@@ -20,7 +20,7 @@ void EventHandler::triggerKeyPressed() {
   currentEditor_ = Core::EditorManager::currentEditor();
 
   if (setEditor(currentEditor_)) {
-    state_ = State::WaitingForSelectionOrMoreCharacters;
+    state_ = State::WaitingForInput;
     enqueueEventFilter();
   } else {
     currentEditor_ = nullptr;
@@ -46,7 +46,7 @@ void EventHandler::reset() {
     viewport->removeEventFilter(this);
     textEdit_ = nullptr;
   }
-  target_.clear();
+  target_.reset();
   state_ = State::Inactive;
   currentEditor_ = nullptr;
 }
@@ -103,9 +103,7 @@ void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos, bool vis
   bool keepSelection = visualMode || visualBlockMode;
 
   QTextCursor textCursor = textEdit->textCursor();
-  textCursor.setPosition(
-      selectNextCharacter ? newPos - 1 : newPos,
-      keepSelection ? QTextCursor::KeepAnchor : QTextCursor::MoveAnchor);
+  textCursor.setPosition(newPos);
 
   if (baseEditor) {
     baseEditor->setTextCursor(textCursor);
@@ -121,14 +119,14 @@ void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos, bool vis
 bool EventHandler::handleKeyPress(QKeyEvent* e) {
   if (e->key() == Qt::Key_Escape) {
     // Exit the process
-    if (state_ == State::WaitingForSelectionOrMoreCharacters) {
+    if (state_ == State::WaitingForInput) {
       textEdit_->viewport()->update();
     }
 
     reset();
 
     return true;
-  } else if (state_ == State::WaitingForSelectionOrMoreCharacters && !isModifierKey(e->key())) {
+  } else if (state_ == State::WaitingForInput && !isModifierKey(e->key())) {
     if (e->key() == Qt::Key_Backspace) {
       target_.backspace(textEdit_);
     } else {
@@ -139,7 +137,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
         target = target.toUpper();
       }
 
-      int newPos = target_.getTargetPos(target);
+      int newPos = target_.getPositionForCharSelection(target);
 
       if (newPos >= 0) {
         QPlainTextEdit* textEdit = textEdit_;
@@ -188,7 +186,7 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
     {
       QString toDraw = "Qtmotion: ";
 
-      if (state_ == State::WaitingForSelectionOrMoreCharacters) {
+      if (state_ == State::WaitingForInput) {
         toDraw.append(
             QString("Query \"") + target_.query() + "\" found in " +
             QString::fromStdString(std::to_string(

@@ -99,9 +99,9 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
 
 void TargetString::backspace(QPlainTextEdit* textEdit) {
   if (query_.length()) {
-    QString queryLessOne = query_.mid(0, query_.length() - 1);
+    const QString queryLessOne = query_.mid(0, query_.length() - 1);
 
-    clear();
+    reset();
 
     for (const QChar c : queryLessOne) {
       findMatchingPositions(textEdit, c);
@@ -113,7 +113,7 @@ const QString& TargetString::query() const {
   return query_;
 }
 
-void TargetString::clear() {
+void TargetString::reset() {
   query_ = QString();
   selectables_.clear();
   potentialSelectables_.clear();
@@ -127,7 +127,7 @@ const std::vector<int>& TargetString::potentialSelectables() const {
   return potentialSelectables_;
 }
 
-int TargetString::getTargetPos(const QChar& c) const {
+int TargetString::getPositionForCharSelection(const QChar& c) const {
   for (const auto& selectable : selectables_) {
     if (selectable.selector == c) {
       return selectable.position;

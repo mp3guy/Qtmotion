@@ -11,7 +11,7 @@ class TargetString {
 
   void findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query);
 
-  void clear();
+  void reset();
 
   const QString& query() const;
 
@@ -24,7 +24,7 @@ class TargetString {
 
   const std::vector<Target>& selectables() const;
   const std::vector<int>& potentialSelectables() const;
-  int getTargetPos(const QChar& c) const;
+  int getPositionForCharSelection(const QChar& c) const;
 
  private:
   static constexpr std::array<char, 52> kKeyOrder_ = {

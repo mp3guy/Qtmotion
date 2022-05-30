@@ -44,7 +44,7 @@ class EventHandler : public QObject {
 
   bool setEditor(Core::IEditor* e);
 
-  enum class State { Inactive, WaitingForSelectionOrMoreCharacters };
+  enum class State { Inactive, WaitingForInput };
 
   Core::IEditor* currentEditor_ = nullptr;
   QPlainTextEdit* textEdit_ = nullptr;

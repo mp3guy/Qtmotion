@@ -23,7 +23,7 @@ bool Plugin::initialize(const QStringList&, QString*) {
       std::string(kSearchScreenId).c_str(),
       Core::Context(Core::Constants::C_EDIT_MODE));
 
-  searchScreenCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+;")));
+  searchScreenCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+,")));
 
   connect(searchEntireScreen, SIGNAL(triggered()), handler_.get(), SLOT(triggerKeyPressed()));
 
