@@ -163,7 +163,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
   return false;
 }
 
-void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
+void EventHandler::handlePaintEvent(QPaintEvent*) {
   if (state_ != State::Inactive) {
     QTextCursor tc = textEdit_->textCursor();
     QFontMetrics fm(textEdit_->font());
@@ -216,7 +216,7 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
       drawRectText(rect, toDraw);
     }
 
-    for (int i = 0; i < target_.selectables().size(); ++i) {
+    for (size_t i = 0; i < target_.selectables().size(); ++i) {
       const TargetString::Target target = target_.selectables()[i];
       tc.setPosition(target.position);
 
@@ -237,7 +237,7 @@ void EventHandler::handlePaintEvent(QPaintEvent* paintEvent) {
       drawRectText(rect, target.selector);
     }
 
-    for (int i = 0; i < target_.potentialSelectables().size(); ++i) {
+    for (size_t i = 0; i < target_.potentialSelectables().size(); ++i) {
       const int position = target_.potentialSelectables()[i];
       tc.setPosition(position);
 

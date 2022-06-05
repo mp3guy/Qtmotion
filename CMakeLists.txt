@@ -24,3 +24,9 @@ add_qtc_plugin(Qtmotion
     EventHandler.cpp
     EventHandler.h
 )
+
+target_compile_options(Qtmotion PRIVATE
+     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+          -Wall>
+     $<$<CXX_COMPILER_ID:MSVC>:
+          /W4>)
