@@ -10,16 +10,28 @@
 #include <QTextBlock>
 
 namespace Qtmotion {
-void EventHandler::triggerKeyPressed() {
-  reset();
+void EventHandler::triggerBeforeChar() {
+  trigger(true, false);
+}
 
-  currentEditor_ = Core::EditorManager::currentEditor();
+void EventHandler::triggerAfterChar() {
+  trigger(false, false);
+}
 
-  if (setEditor(currentEditor_)) {
-    state_ = State::WaitingForInput;
-    enqueueEventFilter();
-  } else {
-    currentEditor_ = nullptr;
+void EventHandler::trigger(const bool beforeChar, const bool selection) {
+  if (Core::EditorManager::currentEditor()->widget()->hasFocus()) {
+    reset();
+
+    currentEditor_ = Core::EditorManager::currentEditor();
+
+    if (setEditor(currentEditor_)) {
+      state_ = State::WaitingForInput;
+      enqueueEventFilter();
+      beforeChar_ = beforeChar;
+      selection_ = selection;
+    } else {
+      currentEditor_ = nullptr;
+    }
   }
 }
 
@@ -42,6 +54,9 @@ void EventHandler::reset() {
     viewport->removeEventFilter(this);
     textEdit_ = nullptr;
   }
+
+  beforeChar_ = false;
+  selection_ = false;
   target_.reset();
   state_ = State::Inactive;
   currentEditor_ = nullptr;
@@ -88,7 +103,7 @@ void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos) {
   }
 
   QTextCursor textCursor = textEdit->textCursor();
-  textCursor.setPosition(newPos);
+  textCursor.setPosition(beforeChar_ ? newPos : newPos + 1);
   textEdit->setTextCursor(textCursor);
 }
 
@@ -118,11 +133,12 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
       if (newPos >= 0) {
         QPlainTextEdit* textEdit = textEdit_;
         QWidget* viewport = textEdit_->viewport();
-        reset();
 
         if (textEdit) {
           moveToPosition(textEdit, newPos);
         }
+
+        reset();
 
         viewport->update();
       } else if (textEdit_) {

@@ -20,13 +20,16 @@ class EventHandler : public QObject {
   EventHandler() = default;
 
  public slots:
-  void triggerKeyPressed();
+  void triggerBeforeChar();
+  void triggerAfterChar();
 
  private slots:
   void installEventFilter();
 
  private:
   void enqueueEventFilter();
+
+  void trigger(const bool beforeChar, const bool selection);
 
   void reset();
 
@@ -37,11 +40,14 @@ class EventHandler : public QObject {
   void handlePaintEvent(QPaintEvent*);
 
   static bool isModifierKey(int key);
-  static void moveToPosition(QPlainTextEdit* textEdit, int newPos);
+
+  void moveToPosition(QPlainTextEdit* textEdit, int newPos);
 
   bool setEditor(Core::IEditor* e);
 
   enum class State { Inactive, WaitingForInput };
+  bool beforeChar_ = false;
+  bool selection_ = false;
 
   Core::IEditor* currentEditor_ = nullptr;
   QPlainTextEdit* textEdit_ = nullptr;

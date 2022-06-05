@@ -7,7 +7,7 @@ class QPlainTextEdit;
 namespace Qtmotion {
 class TargetString {
  public:
-  TargetString();
+  TargetString() = default;
 
   void findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query);
 
