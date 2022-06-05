@@ -22,6 +22,8 @@ class EventHandler : public QObject {
  public slots:
   void triggerBeforeChar();
   void triggerAfterChar();
+  void triggerBeforeCharSelect();
+  void triggerAfterCharSelect();
 
  private slots:
   void installEventFilter();

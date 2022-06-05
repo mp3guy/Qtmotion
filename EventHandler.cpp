@@ -18,6 +18,14 @@ void EventHandler::triggerAfterChar() {
   trigger(false, false);
 }
 
+void EventHandler::triggerBeforeCharSelect() {
+  trigger(true, true);
+}
+
+void EventHandler::triggerAfterCharSelect() {
+  trigger(false, true);
+}
+
 void EventHandler::trigger(const bool beforeChar, const bool selection) {
   if (Core::EditorManager::currentEditor()->widget()->hasFocus()) {
     reset();
@@ -103,7 +111,9 @@ void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos) {
   }
 
   QTextCursor textCursor = textEdit->textCursor();
-  textCursor.setPosition(beforeChar_ ? newPos : newPos + 1);
+  textCursor.setPosition(
+      beforeChar_ ? newPos : newPos + 1,
+      selection_ ? QTextCursor::MoveMode::KeepAnchor : QTextCursor::MoveMode::MoveAnchor);
   textEdit->setTextCursor(textCursor);
 }
 

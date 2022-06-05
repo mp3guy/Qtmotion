@@ -30,6 +30,24 @@ bool Plugin::initialize(const QStringList&, QString*) {
   searchAfterCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+.")));
   connect(searchAfterChar, SIGNAL(triggered()), handler_.get(), SLOT(triggerAfterChar()));
 
+  QAction* selectBeforeChar = new QAction(tr("Select before char"), this);
+  constexpr std::string_view kSelectBeforeId = "Qtmotion.SelectBeforeChar";
+  Core::Command* selectBeforeCmd = Core::ActionManager::registerAction(
+      selectBeforeChar,
+      std::string(kSelectBeforeId).c_str(),
+      Core::Context(Core::Constants::C_EDIT_MODE));
+  selectBeforeCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+<")));
+  connect(selectBeforeChar, SIGNAL(triggered()), handler_.get(), SLOT(triggerBeforeCharSelect()));
+
+  QAction* selectAfterChar = new QAction(tr("Select after char"), this);
+  constexpr std::string_view kSelectAfterId = "Qtmotion.SelectAfterChar";
+  Core::Command* selectAfterCmd = Core::ActionManager::registerAction(
+      selectAfterChar,
+      std::string(kSelectAfterId).c_str(),
+      Core::Context(Core::Constants::C_EDIT_MODE));
+  selectAfterCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+>")));
+  connect(selectAfterChar, SIGNAL(triggered()), handler_.get(), SLOT(triggerAfterCharSelect()));
+
   return true;
 }
 
