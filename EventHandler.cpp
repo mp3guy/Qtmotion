@@ -114,6 +114,8 @@ void EventHandler::moveToPosition(QPlainTextEdit* textEdit, int newPos) {
   textCursor.setPosition(
       beforeChar_ ? newPos : newPos + 1,
       selection_ ? QTextCursor::MoveMode::KeepAnchor : QTextCursor::MoveMode::MoveAnchor);
+
+  textEdit->moveCursor(QTextCursor::End);
   textEdit->setTextCursor(textCursor);
 }
 
