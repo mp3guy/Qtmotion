@@ -37,6 +37,7 @@ void EventHandler::trigger(const bool beforeChar, const bool selection) {
       enqueueEventFilter();
       beforeChar_ = beforeChar;
       selection_ = selection;
+      textEdit_->viewport()->update();
     } else {
       currentEditor_ = nullptr;
     }

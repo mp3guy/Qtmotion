@@ -24,6 +24,10 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
     const int startPos = textEdit->cursorForPosition(QPoint(0, 0)).position();
     const int endPos = textEdit->cursorForPosition(bottomRight).position();
 
+    if (cursorPos < startPos || cursorPos > endPos) {
+      cursorPos = (startPos + endPos) / 2;
+    }
+
     bool notCaseSensitive = query.category() != QChar::Letter_Uppercase;
 
     // Go up and down from the current position matching the target query
