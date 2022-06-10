@@ -155,7 +155,7 @@ bool EventHandler::handleKeyPress(QKeyEvent* e) {
 
         viewport->update();
       } else if (textEdit_) {
-        target_.findMatchingPositions(textEdit_, target);
+        target_.appendQuery(textEdit_, target);
       }
     }
 
@@ -225,13 +225,7 @@ void EventHandler::handlePaintEvent(QPaintEvent*) {
 
       const QChar character = textEdit_->document()->characterAt(target.position);
 
-      int targetCharFontWidth = fm.horizontalAdvance(character);
-
-      if (targetCharFontWidth == 0) {
-        targetCharFontWidth = fm.horizontalAdvance(" ");
-      }
-
-      rect.setWidth(targetCharFontWidth);
+      rect.setWidth(fm.horizontalAdvance(character));
 
       pen.setColor(QColor(170, 170, 255, 255));
       painter.setBrush(QBrush(QColor(54, 54, 85, 255)));
@@ -239,24 +233,16 @@ void EventHandler::handlePaintEvent(QPaintEvent*) {
     }
 
     for (size_t i = 0; i < target_.potentialSelectables().size(); ++i) {
-      const int position = target_.potentialSelectables()[i];
-      tc.setPosition(position);
+      const TargetString::Target target = target_.potentialSelectables()[i];
+      tc.setPosition(target.position);
 
       QRect rect = textEdit_->cursorRect(tc);
 
-      const QChar character = textEdit_->document()->characterAt(position);
-
-      int targetCharFontWidth = fm.horizontalAdvance(character);
-
-      if (targetCharFontWidth == 0) {
-        targetCharFontWidth = fm.horizontalAdvance(" ");
-      }
-
-      rect.setWidth(targetCharFontWidth);
+      rect.setWidth(fm.horizontalAdvance(target.selector));
 
       pen.setColor(QColor(255, 170, 170, 255));
       painter.setBrush(QBrush(QColor(85, 54, 54, 255)));
-      drawRectText(rect, character);
+      drawRectText(rect, target.selector);
     }
 
     painter.end();

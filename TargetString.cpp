@@ -7,7 +7,16 @@
 #include <QTextDocument>
 
 namespace Qtmotion {
-void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& query) {
+void TargetString::appendQuery(QPlainTextEdit* textEdit, const QChar& query) {
+  findMatchingPositions(textEdit, query, query_, selectables_, potentialSelectables_);
+}
+
+void TargetString::findMatchingPositions(
+    QPlainTextEdit* textEdit,
+    const QChar& query,
+    QString& aggregateQuery,
+    std::vector<Target>& selectables,
+    std::vector<Target>& potentialSelectables) {
   if (textEdit == nullptr) {
     return;
   }
@@ -17,13 +26,14 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
   std::vector<int> matchingPositions;
 
   // First time new query
-  if (query_.length() == 0) {
+  if (aggregateQuery.length() == 0) {
     int cursorPos = textEdit->textCursor().position();
 
     const QPoint bottomRight(textEdit->viewport()->width() - 1, textEdit->viewport()->height() - 1);
     const int startPos = textEdit->cursorForPosition(QPoint(0, 0)).position();
     const int endPos = textEdit->cursorForPosition(bottomRight).position();
 
+    // Cursor currently offscreen
     if (cursorPos < startPos || cursorPos > endPos) {
       cursorPos = (startPos + endPos) / 2;
     }
@@ -58,21 +68,21 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
     }
   } else {
     // If we have run before, clear out incompatible matches
-    for (const auto& selectable : selectables_) {
-      if (doc->characterAt(selectable.position + query_.length()) == query) {
+    for (const auto& selectable : selectables) {
+      if (doc->characterAt(selectable.position + aggregateQuery.length()) == query) {
         matchingPositions.push_back(selectable.position);
       }
     }
 
-    for (const auto& position : potentialSelectables_) {
-      if (doc->characterAt(position + query_.length()) == query) {
-        matchingPositions.push_back(position);
+    for (const auto& potentialSelectable : potentialSelectables) {
+      if (doc->characterAt(potentialSelectable.position + aggregateQuery.length()) == query) {
+        matchingPositions.push_back(potentialSelectable.position);
       }
     }
   }
 
-  selectables_.clear();
-  potentialSelectables_.clear();
+  selectables.clear();
+  potentialSelectables.clear();
 
   // Now, find characters the set of characters that don't follow any of the matching positions
   std::vector<char> validCharChoices;
@@ -80,23 +90,27 @@ void TargetString::findMatchingPositions(QPlainTextEdit* textEdit, const QChar& 
 
   for (const auto position : matchingPositions) {
     std::erase(
-        validCharChoices, doc->characterAt(position + query_.length() + 1).toUpper().toLatin1());
+        validCharChoices,
+        doc->characterAt(position + aggregateQuery.length() + 1).toUpper().toLatin1());
     std::erase(
-        validCharChoices, doc->characterAt(position + query_.length() + 1).toLower().toLatin1());
+        validCharChoices,
+        doc->characterAt(position + aggregateQuery.length() + 1).toLower().toLatin1());
   }
 
   // Provide the initial set of selectables
   for (size_t i = 0; i < validCharChoices.size() && i < matchingPositions.size(); i++) {
-    selectables_.push_back(
-        Target{.position = matchingPositions[i], .selector = validCharChoices[i]});
+    selectables.push_back(
+        Target{.position = matchingPositions[i], .selector = QString(validCharChoices[i])});
   }
 
   // Backup the ambiguous ones for later
   for (size_t i = validCharChoices.size(); i < matchingPositions.size(); i++) {
-    potentialSelectables_.push_back(matchingPositions[i]);
+    potentialSelectables.push_back(Target{
+        .position = matchingPositions[i],
+        .selector = QString(doc->characterAt(matchingPositions[i]))});
   }
 
-  query_ += query;
+  aggregateQuery += query;
 }
 
 void TargetString::backspace(QPlainTextEdit* textEdit) {
@@ -106,7 +120,7 @@ void TargetString::backspace(QPlainTextEdit* textEdit) {
     reset();
 
     for (const QChar c : queryLessOne) {
-      findMatchingPositions(textEdit, c);
+      findMatchingPositions(textEdit, c, query_, selectables_, potentialSelectables_);
     }
   }
 }
@@ -125,7 +139,7 @@ const std::vector<TargetString::Target>& TargetString::selectables() const {
   return selectables_;
 }
 
-const std::vector<int>& TargetString::potentialSelectables() const {
+const std::vector<TargetString::Target>& TargetString::potentialSelectables() const {
   return potentialSelectables_;
 }
 
