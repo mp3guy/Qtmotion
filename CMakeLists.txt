@@ -23,6 +23,13 @@ add_qtc_plugin(Qtmotion
     TargetString.h
     EventHandler.cpp
     EventHandler.h
+    Settings.cpp
+    Settings.h
+    OptPageMain.cpp
+    OptPageMain.h
+    OptPageMainWidget.cpp
+    OptPageMainWidget.h
+    res.qrc
 )
 
 target_compile_options(Qtmotion PRIVATE

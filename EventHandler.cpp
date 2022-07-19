@@ -1,15 +1,24 @@
 #include "EventHandler.h"
 
+#include <cstdlib>
 #include <iostream>
 
 #include <coreplugin/editormanager/editormanager.h>
+#include <coreplugin/progressmanager/futureprogress.h>
+#include <coreplugin/progressmanager/progressmanager.h>
 #include <texteditor/texteditor.h>
+#include <utils/mapreduce.h>
 
+#include <QFutureInterface>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QTextBlock>
 
 namespace Qtmotion {
+EventHandler::EventHandler() {
+  handlers_.push_back(this);
+}
+
 void EventHandler::triggerBeforeChar() {
   trigger(true, false);
 }
@@ -24,6 +33,38 @@ void EventHandler::triggerBeforeCharSelect() {
 
 void EventHandler::triggerAfterCharSelect() {
   trigger(false, true);
+}
+
+void EventHandler::updateCommand(const Settings& settings) {
+  commandSettings_ = settings;
+}
+
+void EventHandler::triggerCommand() {
+  const auto editor = Core::EditorManager::currentEditor();
+
+  if (editor && commandSettings_.passFilename()) {
+    filePath_ = editor->document()->filePath().absolutePath().toString().toStdString();
+  } else {
+    filePath_ = "";
+  }
+
+  if ((editor && commandSettings_.passFilename()) || !commandSettings_.passFilename()) {
+    Core::ProgressManager::addTask(
+        Utils::map(handlers_, &EventHandler::runCommand), tr("Command"), Utils::Id("Command"));
+  }
+}
+
+void EventHandler::runCommand(QFutureInterface<void>& future) {
+  future.setProgressRange(0, 100);
+
+  const std::string commandToRun =
+      commandSettings_.command() + (filePath_.length() ? " " + filePath_ : "");
+
+  while (!future.isCanceled()) {
+    future.setProgressValue(50);
+    std::system(commandToRun.c_str());
+    break;
+  }
 }
 
 void EventHandler::trigger(const bool beforeChar, const bool selection) {

@@ -3,15 +3,25 @@
 #include <iostream>
 
 #include <coreplugin/actionmanager/actionmanager.h>
+#include <coreplugin/icore.h>
 
 #include <QAction>
 
 #include "EventHandler.h"
+#include "OptPageMain.h"
 
 namespace Qtmotion {
 Plugin::Plugin() : handler_(std::make_unique<EventHandler>()) {}
 
 bool Plugin::initialize(const QStringList&, QString*) {
+  // Setup the configuration settings
+
+  settings_ = std::make_unique<Settings>();
+  settings_->Load();
+  handler_->updateCommand(*settings_);
+  optionsPage_ = std::make_unique<OptPageMain>(settings_.get(), this);
+  connect(optionsPage_.get(), &OptPageMain::SettingsChanged, this, &Plugin::updateCommand);
+
   QAction* searchBeforeChar = new QAction(tr("Search before char"), this);
   constexpr std::string_view kSearchBeforeId = "Qtmotion.SearchBeforeChar";
   Core::Command* searchBeforeCmd = Core::ActionManager::registerAction(
@@ -48,12 +58,24 @@ bool Plugin::initialize(const QStringList&, QString*) {
   selectAfterCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+>")));
   connect(selectAfterChar, SIGNAL(triggered()), handler_.get(), SLOT(triggerAfterCharSelect()));
 
+  QAction* runCommand = new QAction(tr("Run command"), this);
+  constexpr std::string_view kRunCommand = "Qtmotion.RunCommand";
+  Core::Command* runCommandCmd = Core::ActionManager::registerAction(
+      runCommand, std::string(kRunCommand).c_str(), Core::Context(Core::Constants::C_EDIT_MODE));
+  runCommandCmd->setDefaultKeySequence(QKeySequence(tr("Ctrl+y")));
+  connect(runCommand, SIGNAL(triggered()), handler_.get(), SLOT(triggerCommand()));
+
   return true;
+}
+
+void Plugin::updateCommand() {
+  handler_->updateCommand(*settings_);
 }
 
 void Plugin::extensionsInitialized() {}
 
 ExtensionSystem::IPlugin::ShutdownFlag Plugin::aboutToShutdown() {
+  optionsPage_->disconnect();
   return SynchronousShutdown;
 }
 
